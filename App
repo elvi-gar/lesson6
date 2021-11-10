@@ -1,0 +1,81 @@
+public class App {
+    private static final String BASE_HOST = "dataservice.accuweather.com";
+    private static final String FORECAST = "forecasts";
+    private static final String API_VERSION = "v1";
+    private static final String FORECAST_TYPE = "daily";
+    private static final String FORECAST_PERIOD = "5day";
+
+    private static final String SAINT_PETERSBURG_KEY = "474212_PC";
+    private static final String API_KEY = "0d1tNZJPfzzT3qGokM18FGGxAUpt7hpj";
+
+    public static void main(String[] args) throws IOException, ParseException {
+
+        OkHttpClient client = new OkHttpClient();
+
+        // Сегментированное построение URL
+        HttpUrl url = new HttpUrl.Builder()
+                .scheme("http")
+                .host(BASE_HOST)
+                .addPathSegment(FORECAST)
+                .addPathSegment(API_VERSION)
+                .addPathSegment(FORECAST_TYPE)
+                .addPathSegment(FORECAST_PERIOD)
+                .addPathSegment(SAINT_PETERSBURG_KEY)
+                .addQueryParameter("apikey", API_KEY)
+                .addQueryParameter("language", "ru-ru")
+                .addQueryParameter("metric", "true")
+                .build();
+
+        System.out.println(url.toString());
+
+        // При необходимости указать заголовки
+        Request requesthttp = new Request.Builder()
+                .addHeader("accept", "application/json")
+                .url(url)
+                .build();
+
+        String jsonResponse = client.newCall(requesthttp).execute().body().string();
+
+        List<Temperature> temperatures = getTempFromText(jsonResponse);
+
+        for (Temperature temperature : temperatures) {
+            System.out.println(temperature);
+        }
+
+    }
+
+
+    private static List<Temperature> getTempFromText(String text) throws ParseException {
+        List<Temperature> temps = new ArrayList<>();
+
+        JSONParser jsonParser = new JSONParser();
+        JSONObject jsonObject = (JSONObject) jsonParser.parse(text);
+
+        JSONArray forecasts = (JSONArray) jsonObject.get("DailyForecasts");
+
+        for (int i = 0; i < forecasts.size(); i++) {
+            JSONObject forecast = (JSONObject) forecasts.get(i);
+
+            // парсим дату
+            String date = forecast.get("Date").toString();
+            ZonedDateTime zonedDateTime = ZonedDateTime.parse(date);
+            LocalDate localDate = zonedDateTime.toLocalDate();
+
+            // берем элемент Temperature
+            JSONObject temperature = (JSONObject) forecast.get("Temperature");
+
+            // парсим минимальную температуру
+            JSONObject minimum = (JSONObject) temperature.get("Minimum");
+            BigDecimal minTemp = new BigDecimal(minimum.get("Value").toString());
+
+            // парсим максимальную температуру
+            JSONObject maximum = (JSONObject) temperature.get("Maximum");
+            BigDecimal maxTemp = new BigDecimal(maximum.get("Value").toString());
+
+            temps.add(new Temperature(minTemp, maxTemp, localDate));
+
+        }
+
+        return temps;
+    }
+}
