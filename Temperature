@@ -1,0 +1,21 @@
+public class Temperature {
+    private BigDecimal minTemp;
+    private BigDecimal maxTemp;
+    private LocalDate date;
+
+    public Temperature(BigDecimal minTemp, BigDecimal maxTemp, LocalDate date) {
+        this.minTemp = minTemp;
+        this.maxTemp = maxTemp;
+        this.date = date;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Temperature{" +
+                "date=" + date +
+                ", minTemp=" + minTemp +
+                ", maxTemp=" + maxTemp +
+                '}';
+    }
+}
